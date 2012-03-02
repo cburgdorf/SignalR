@@ -96,6 +96,9 @@ namespace SignalR.Hubs
 
             bool first = true;
 
+            sb.AppendFormat("someValue: new Rx.Subject(),");
+            sb.AppendLine("someValueOnNext: function(value) { signalR.ticketHub.someValue.onNext(value); },");
+
             foreach (var method in methods)
             {
                 if (!first)
