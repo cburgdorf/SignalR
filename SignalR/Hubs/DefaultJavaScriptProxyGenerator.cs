@@ -96,8 +96,9 @@ namespace SignalR.Hubs
 
             bool first = true;
 
+            //ToDo: Generate proxy code for each IObservable property on the hub
             sb.AppendFormat("someValue: new Rx.Subject(),");
-            sb.AppendLine("someValueOnNext: function(value) { signalR.ticketHub.someValue.onNext(value); },");
+            sb.AppendLine("someValueOnNext: function(value) { signalR.rxHub.someValue.onNext(value); },");
 
             foreach (var method in methods)
             {
