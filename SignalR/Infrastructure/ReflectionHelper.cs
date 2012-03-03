@@ -11,37 +11,34 @@ namespace SignalR.Infrastructure
         private static readonly Type[] _excludeTypes = new[] { typeof(Hub), typeof(object) };
         private static readonly Type[] _excludeInterfaces = new[] { typeof(IHub), typeof(IDisconnect), typeof(IConnected) };
 
+        internal static IEnumerable<T> ContinueWithOrReturnEmptyIfNotAHub<T>(Type type, Func<IEnumerable<T>> processWith)
+        {
+            return !typeof(IHub).IsAssignableFrom(type) ? Enumerable.Empty<T>() : processWith();
+        }
+
         internal static IEnumerable<MethodInfo> GetExportedHubMethods(Type type)
         {
-            if (!typeof(IHub).IsAssignableFrom(type))
+            return ContinueWithOrReturnEmptyIfNotAHub(type, () =>
             {
-                return Enumerable.Empty<MethodInfo>();
-            }
+                var properties = type.GetProperties(BindingFlags.Public | BindingFlags.Instance);
+                var getMethods = properties.Select(p => p.GetGetMethod());
+                var setMethods = properties.Select(p => p.GetSetMethod());
+                var allPropertyMethods = getMethods.Concat(setMethods);
+                var allInterfaceMethods = _excludeInterfaces.SelectMany(i => GetInterfaceMethods(type, i));
+                var allExcludes = allPropertyMethods.Concat(allInterfaceMethods);
 
-            var properties = type.GetProperties(BindingFlags.Public | BindingFlags.Instance);
-            var getMethods = properties.Select(p => p.GetGetMethod());
-            var setMethods = properties.Select(p => p.GetSetMethod());
-            var allPropertyMethods = getMethods.Concat(setMethods);
-            var allInterfaceMethods = _excludeInterfaces.SelectMany(i => GetInterfaceMethods(type, i));
-            var allExcludes = allPropertyMethods.Concat(allInterfaceMethods);
+                var actualMethods = type.GetMethods(BindingFlags.Public | BindingFlags.Instance);
 
-            var actualMethods = type.GetMethods(BindingFlags.Public | BindingFlags.Instance);
-
-            return actualMethods.Except(allExcludes)
-                                .Where(m => !_excludeTypes.Contains(m.DeclaringType));
-
+                return actualMethods.Except(allExcludes)
+                                    .Where(m => !_excludeTypes.Contains(m.DeclaringType));
+            });
         }
 
         internal static IEnumerable<PropertyInfo> GetExportedHubObservables(Type type)
         {
-            //Todo DRY WhenIsHub(x => x)
-            if (!typeof(IHub).IsAssignableFrom(type))
-            {
-                return Enumerable.Empty<PropertyInfo>();
-            }
-
-            return type.GetProperties(BindingFlags.Public | BindingFlags.Instance)
-                       .Where(x => x.PropertyType.Name == "IObservable`1");
+            return ContinueWithOrReturnEmptyIfNotAHub(type, () => 
+                type.GetProperties(BindingFlags.Public | BindingFlags.Instance)
+                    .Where(x => x.PropertyType.Name == "IObservable`1"));
         }
 
         private static IEnumerable<MethodInfo> GetInterfaceMethods(Type type, Type iface)

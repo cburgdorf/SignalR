@@ -110,7 +110,7 @@ namespace SignalR.Hubs
                 firstMethod = false;
             }
 
-            if (observableProperties.Any())
+            if (observableProperties.Any() && methods.Any())
             {
                 sb.Append(",").AppendLine();
             }
