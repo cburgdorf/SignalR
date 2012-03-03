@@ -1,0 +1,12 @@
+﻿<div id="counter"></div>
+<script type="text/javascript" src="/signalr/hubs"></script>
+<script type="text/javascript">
+
+    $(function () {
+        var myHub = $.connection.rxHub;
+        myHub.someValue.subscribe(function (x) {
+            $('#counter').html(x);
+        });
+        $.connection.hub.start();
+    });
+</script>
