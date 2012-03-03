@@ -32,6 +32,18 @@ namespace SignalR.Infrastructure
 
         }
 
+        internal static IEnumerable<PropertyInfo> GetExportedHubObservables(Type type)
+        {
+            //Todo DRY WhenIsHub(x => x)
+            if (!typeof(IHub).IsAssignableFrom(type))
+            {
+                return Enumerable.Empty<PropertyInfo>();
+            }
+
+            return type.GetProperties(BindingFlags.Public | BindingFlags.Instance)
+                       .Where(x => x.PropertyType.Name == "IObservable`1");
+        }
+
         private static IEnumerable<MethodInfo> GetInterfaceMethods(Type type, Type iface)
         {
             if (!iface.IsAssignableFrom(type))

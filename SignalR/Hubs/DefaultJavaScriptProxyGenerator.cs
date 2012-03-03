@@ -75,6 +75,10 @@ namespace SignalR.Hubs
             // Get public instance methods declared on this type only
             var methods = GetMethods(type);
             var members = methods.Select(m => m.Name).ToList();
+
+            // Get observable properties declared on this type
+            var observableProperties = ReflectionHelper.GetExportedHubObservables(type);
+
             members.Add("namespace");
             members.Add("ignoreMembers");
             members.Add("callbacks");
@@ -85,7 +89,7 @@ namespace SignalR.Hubs
             sb.AppendFormat("                ignoreMembers: [{0}],", Commas(members, m => "'" + Json.CamelCase(m) + "'")).AppendLine();
             sb.AppendLine("                connection: function () { return signalR.hub; }");
             sb.AppendFormat("            }}");
-            if (methods.Any())
+            if (methods.Any() || observableProperties.Any())
             {
                 sb.Append(",").AppendLine();
             }
@@ -94,21 +98,35 @@ namespace SignalR.Hubs
                 sb.AppendLine();
             }
 
-            bool first = true;
-
-            //ToDo: Generate proxy code for each IObservable property on the hub
-            sb.AppendFormat("someValue: new Rx.Subject(),");
-            sb.AppendLine("someValueOnNext: function(value) { signalR.rxHub.someValue.onNext(value); },");
+            bool firstMethod = true;
 
             foreach (var method in methods)
             {
-                if (!first)
+                if (!firstMethod)
                 {
                     sb.Append(",").AppendLine();
                 }
                 GenerateMethod(serviceUrl, sb, type, method);
-                first = false;
+                firstMethod = false;
             }
+
+            if (observableProperties.Any())
+            {
+                sb.Append(",").AppendLine();
+            }
+
+            bool firstProperty = true;
+
+            foreach (var observableProperty in observableProperties)
+            {
+                if (!firstProperty)
+                {
+                    sb.Append(",").AppendLine();
+                }
+                GenerateRxSubject(sb, type, observableProperty);
+                firstProperty = false;
+            }
+            
             sb.AppendLine();
             sb.Append("        }");
         }
@@ -138,6 +156,20 @@ namespace SignalR.Hubs
             sb.AppendFormat("            {0}: function ({1}) {{", GetMethodName(method), Commas(parameterNames)).AppendLine();
             sb.AppendFormat("                return serverCall(this, \"{0}\", $.makeArray(arguments));", method.Name).AppendLine();
             sb.Append("            }");
+        }
+
+        private void GenerateRxSubject(StringBuilder sb, Type type, PropertyInfo property)
+        {
+            var propertyName = Json.CamelCase(property.Name);
+            var hubName = Json.CamelCase(type.Name);
+            sb.AppendFormat("            {0}: new Rx.Subject(),", propertyName);
+            sb.AppendLine();
+            sb.AppendFormat("            {0}OnNext: function(value) {{ signalR.{1}.{0}.onNext(value); }},", propertyName, hubName);
+            sb.AppendLine();
+            sb.AppendFormat("            {0}OnError: function(value) {{ signalR.{1}.{0}.onError(value); }},", propertyName, hubName);
+            sb.AppendLine();
+            sb.AppendFormat("            {0}OnComplete: function(value) {{ signalR.{1}.{0}.onComplete(value); }},", propertyName, hubName);
+            sb.AppendLine();
         }
 
         private static string GetMethodName(MethodInfo method)

@@ -29,7 +29,11 @@ namespace SignalR.RxExtensions
                 throw new ArgumentException("'expression' should be a member expression");
             }
 
-            return _observable.Subscribe(x => clients.Invoke(camelCase(memberExpression.Member.Name) + "OnNext", x));
+            return _observable.Subscribe(
+                x => clients.Invoke(camelCase(memberExpression.Member.Name) + "OnNext", x),
+                x => clients.Invoke(camelCase(memberExpression.Member.Name) + "OnError", x),
+                () => clients.Invoke(camelCase(memberExpression.Member.Name) + "OnCompleted")
+                );
         }
     }
 
