@@ -1,13 +1,6 @@
-﻿using System;
-using System.Reactive.Linq;
-using System.Threading;
-using System.Threading.Tasks;
-using System.Web.Mvc;
-using Mvc3SignalR.Models;
-using SignalR;
-using SignalR.Infrastructure;
+﻿using System.Web.Mvc;
 
-namespace Mvc3SignalR.Controllers
+namespace SignalR.RxExtensions.Demo.Controllers
 {
     public class HomeController : Controller
     {

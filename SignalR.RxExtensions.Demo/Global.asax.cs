@@ -3,7 +3,7 @@ using System.Reactive.Linq;
 using System.Web;
 using System.Web.Mvc;
 using System.Web.Routing;
-using Mvc3SignalR.Models;
+using SignalR.RxExtensions.Demo.Models;
 
 namespace SignalR.RxExtensions.Demo
 {
@@ -36,6 +36,10 @@ namespace SignalR.RxExtensions.Demo
 
             RegisterGlobalFilters(GlobalFilters.Filters);
             RegisterRoutes(RouteTable.Routes);
+
+            //HOT STUFF
+            //We have a serverside IObservable<string> that gets published on the client side
+            //We essentially say map this Observable to an Observable property on the hub
 
             Observable
                 .Interval(TimeSpan.FromSeconds(1))
