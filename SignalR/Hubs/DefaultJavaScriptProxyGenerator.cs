@@ -176,7 +176,7 @@ namespace SignalR.Hubs
             sb.AppendFormat("                                                        if (x.Type === 'onError') obs.onError(x.Data); ").AppendLine();
             sb.AppendFormat("                                                        if (x.Type === 'onCompleted') obs.onCompleted(); ").AppendLine();
             sb.AppendFormat("                                                    }}); ").AppendLine();
-            sb.AppendFormat("                                                return disposable.m.dispose; ").AppendLine();
+            sb.AppendFormat("                                                return disposable.dispose; ").AppendLine();
             sb.AppendFormat("                                 }}); ").AppendLine();
             sb.AppendFormat("                             }} ").AppendLine();
         }
