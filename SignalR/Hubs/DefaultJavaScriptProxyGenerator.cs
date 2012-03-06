@@ -160,7 +160,7 @@ namespace SignalR.Hubs
 
         private void GenerateRxSubject(StringBuilder sb, Type type, PropertyInfo property)
         {
-            var propertyName = Json.CamelCase(property.Name);
+            Json.CamelCase(property.Name);
             var hubName = Json.CamelCase(type.Name);
             sb.AppendFormat("            subject : new Rx.Subject(),");
             sb.AppendLine();
