@@ -18,23 +18,28 @@ namespace SignalR.RxExtensions
 
         public IDisposable Observable<THub>(Expression<Func<THub, dynamic>> expression) where THub : Hub, new()
         {
-            var connectionManager = AspNetHost.DependencyResolver.Resolve<IConnectionManager>();
-            dynamic clients = connectionManager.GetClients<THub>();
-
-            Func<string, string> camelCase = value => String.Join(".", value.Split('.').Select(n => Char.ToLower(n[0]) + n.Substring(1)));
-
             var memberExpression = expression.Body as MemberExpression;
             if (memberExpression == null)
             {
                 throw new ArgumentException("'expression' should be a member expression");
             }
 
+            return Observable<THub>(memberExpression.Member.Name);
+        }
+
+        public IDisposable Observable<THub>(string eventName) where THub : Hub, new()
+        {
+            var connectionManager = AspNetHost.DependencyResolver.Resolve<IConnectionManager>();
+            dynamic clients = connectionManager.GetClients<THub>();
+
+
             return _observable.Subscribe(
-                x => clients.Invoke(camelCase(memberExpression.Member.Name) + "OnNext", x),
-                x => clients.Invoke(camelCase(memberExpression.Member.Name) + "OnError", x),
-                () => clients.Invoke(camelCase(memberExpression.Member.Name) + "OnCompleted")
+                x => clients.Invoke("subjectOnNext", new { Data = x, EventName = eventName, Type= "onNext" }),
+                x => clients.Invoke("subjectOnNext", new { Data = x, EventName = eventName, Type = "onError" }),
+                () => clients.Invoke("subjectOnNext", new { EventName = eventName, Type = "onCompleted" })
                 );
         }
+
     }
 
     public static class SignalRObservableExtensions

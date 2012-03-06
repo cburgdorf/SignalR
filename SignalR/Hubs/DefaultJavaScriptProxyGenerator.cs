@@ -162,14 +162,23 @@ namespace SignalR.Hubs
         {
             var propertyName = Json.CamelCase(property.Name);
             var hubName = Json.CamelCase(type.Name);
-            sb.AppendFormat("            {0}: new Rx.Subject(),", propertyName);
+            sb.AppendFormat("            subject : new Rx.Subject(),");
             sb.AppendLine();
-            sb.AppendFormat("            {0}OnNext: function(value) {{ signalR.{1}.{0}.onNext(value); }},", propertyName, hubName);
+            sb.AppendFormat("            subjectOnNext: function(value) {{ signalR.{0}.subject.onNext(value); }},", hubName);
             sb.AppendLine();
-            sb.AppendFormat("            {0}OnError: function(value) {{ signalR.{1}.{0}.onError(value); }},", propertyName, hubName);
-            sb.AppendLine();
-            sb.AppendFormat("            {0}OnComplete: function(value) {{ signalR.{1}.{0}.onComplete(value); }},", propertyName, hubName);
-            sb.AppendLine();
+            sb.AppendFormat("            getObservable: function (eventName) {{ ").AppendLine();
+            sb.AppendFormat("                                return Rx.Observable.create(function (obs) {{ ").AppendLine();
+            sb.AppendFormat("                                                var disposable = signalR.{0}.subject ", hubName).AppendLine();
+            sb.AppendFormat("                                                    .asObservable() ").AppendLine();
+            sb.AppendFormat("                                                    .where(function (x) {{ return x.EventName.toLowerCase() === eventName.toLowerCase(); }}) ").AppendLine();
+            sb.AppendFormat("                                                    .subscribe(function (x) {{ ").AppendLine();
+            sb.AppendFormat("                                                        if (x.Type === 'onNext') obs.onNext(x.Data); ").AppendLine();
+            sb.AppendFormat("                                                        if (x.Type === 'onError') obs.onError(x.Data); ").AppendLine();
+            sb.AppendFormat("                                                        if (x.Type === 'onCompleted') obs.onCompleted(); ").AppendLine();
+            sb.AppendFormat("                                                    }}); ").AppendLine();
+            sb.AppendFormat("                                                return disposable.m.dispose; ").AppendLine();
+            sb.AppendFormat("                                 }}); ").AppendLine();
+            sb.AppendFormat("                             }} ").AppendLine();
         }
 
         private static string GetMethodName(MethodInfo method)
